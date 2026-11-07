@@ -1,0 +1,78 @@
+name: Build APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # If the project was uploaded as a single zip file, unpack it first.
+      - name: Unpack project zip (if present)
+        run: |
+          if [ -f magscope.zip ]; then
+            unzip -q -o magscope.zip
+          fi
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Generate Android scaffolding
+        run: |
+          mkdir -p /tmp/backup
+          cp -r lib /tmp/backup/lib
+          cp pubspec.yaml /tmp/backup/pubspec.yaml
+          flutter create --platforms=android --org dev.magscope --project-name magscope .
+          # make sure our own sources win over anything the template wrote
+          rm -rf lib
+          cp -r /tmp/backup/lib lib
+          cp /tmp/backup/pubspec.yaml pubspec.yaml
+
+      - name: Apply Bluetooth-ready manifest
+        run: cp android_overrides/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
+
+      - name: Dark launch screen
+        run: |
+          for d in drawable drawable-v21; do
+            mkdir -p android/app/src/main/res/$d
+            cp android_overrides/launch_background.xml android/app/src/main/res/$d/launch_background.xml
+          done
+
+      - name: Download font (optional)
+        continue-on-error: true
+        run: |
+          mkdir -p assets/fonts
+          for w in Regular Medium SemiBold Bold; do
+            curl -fsSL -o assets/fonts/IBMPlexSansArabic-$w.ttf \
+              https://github.com/google/fonts/raw/main/ofl/ibmplexsansarabic/IBMPlexSansArabic-$w.ttf || true
+          done
+          python3 tool/add_fonts.py
+
+      - name: Get packages
+        run: flutter pub get
+
+      - name: Generate launcher icon
+        continue-on-error: true
+        run: |
+          pip install pillow
+          python3 tool/make_icon.py
+          dart run flutter_launcher_icons
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: magscope-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
