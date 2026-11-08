@@ -75,8 +75,15 @@ jobs:
           python3 tool/make_icon.py
           dart run flutter_launcher_icons
 
+      # A fixed signing key + a rising version number, so each new APK installs
+      # over the previous one as an update (no need to uninstall).
+      - name: Use fixed signing key
+        run: |
+          mkdir -p ~/.android
+          cp android_overrides/debug.keystore ~/.android/debug.keystore
+
       - name: Build release APK
-        run: flutter build apk --release
+        run: flutter build apk --release --build-number=${{ github.run_number }}
 
       - uses: actions/upload-artifact@v4
         with:
