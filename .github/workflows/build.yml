@@ -51,6 +51,32 @@ jobs:
           sed -i -E 's/minSdk(Version)?[ =]+flutter\.minSdkVersion/minSdk = 26/' "$f"
           grep -n 'minSdk' "$f"
 
+      # Newer Flutter requires every plugin to compile against Android 36, but some
+      # plugins (e.g. file_picker 8) still declare 34. Force 36 for all of them.
+      - name: Force compileSdk 36 for plugins
+        run: |
+          if [ -f android/build.gradle.kts ]; then
+            f=android/build.gradle.kts
+            printf '%s\n' \
+              'subprojects {' \
+              '    afterEvaluate {' \
+              '        extensions.findByName("android")?.withGroovyBuilder { "compileSdkVersion"(36) }' \
+              '    }' \
+              '}' > /tmp/patch.gradle
+          else
+            f=android/build.gradle
+            printf '%s\n' \
+              'subprojects {' \
+              '    afterEvaluate { p ->' \
+              '        if (p.hasProperty("android")) { p.android { compileSdkVersion 36 } }' \
+              '    }' \
+              '}' > /tmp/patch.gradle
+          fi
+          echo "Patching $f"
+          cat /tmp/patch.gradle "$f" > /tmp/merged.gradle
+          cp /tmp/merged.gradle "$f"
+          head -12 "$f"
+
       - name: Localised app name (Sniper-Dz / القناص)
         run: |
           cp -r android_overrides/res/. android/app/src/main/res/
