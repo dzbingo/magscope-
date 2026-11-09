@@ -103,6 +103,34 @@ jobs:
       - name: Get packages
         run: flutter pub get
 
+      # Gradle is normally downloaded from GitHub releases, which sometimes answers
+      # 504. Download it ourselves with many retries (two mirrors) and point the
+      # wrapper to the local file.
+      - name: Pre-download Gradle (with retries)
+        run: |
+          props=android/gradle/wrapper/gradle-wrapper.properties
+          ver=$(grep -oE 'gradle-[0-9]+(\.[0-9]+)*' "$props" | head -1 | sed 's/gradle-//')
+          echo "Gradle version: $ver"
+          ok=0
+          for round in 1 2 3; do
+            for url in \
+              "https://services.gradle.org/distributions/gradle-$ver-bin.zip" \
+              "https://downloads.gradle.org/distributions/gradle-$ver-bin.zip"; do
+              echo "Downloading $url (round $round)"
+              if curl -fL --retry 5 --retry-all-errors --retry-delay 10 -o "/tmp/gradle-$ver-bin.zip" "$url"; then
+                ok=1; break 2
+              fi
+            done
+            sleep 30
+          done
+          if [ "$ok" = 1 ]; then
+            sed -i "s#^distributionUrl=.*#distributionUrl=file\\\\:///tmp/gradle-$ver-bin.zip#" "$props"
+            echo "Using local Gradle"
+          else
+            echo "Could not pre-download Gradle; using the default wrapper download"
+          fi
+          cat "$props"
+
       - name: Generate launcher icon
         continue-on-error: true
         run: |
