@@ -92,7 +92,19 @@ jobs:
           cp android_overrides/debug.keystore ~/.android/debug.keystore
 
       - name: Build release APK
-        run: flutter build apk --release --build-number=${{ github.run_number }}
+        run: |
+          set +e
+          flutter build apk --release --build-number=${{ github.run_number }} 2>&1 | tee build.log
+          code=${PIPESTATUS[0]}
+          if [ "$code" -ne 0 ]; then
+            {
+              echo '## Build errors (copy this text)'
+              echo '```'
+              grep -n -E -A8 'What went wrong|Execution failed|Manifest merger|Could not resolve|Because |error:|Error:|^e: |FAILURE' build.log | head -150
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit $code
 
       - uses: actions/upload-artifact@v4
         with:
