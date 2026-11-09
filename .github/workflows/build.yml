@@ -42,6 +42,15 @@ jobs:
       - name: Apply Bluetooth-ready manifest
         run: cp android_overrides/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
 
+      # Some plugins (camera, Bluetooth, location) need a newer minimum Android
+      # version than Flutter's default. Android 8.0+ covers nearly all phones.
+      - name: Raise minSdk to 26
+        run: |
+          f=$(ls android/app/build.gradle.kts android/app/build.gradle 2>/dev/null | head -1)
+          echo "Patching $f"
+          sed -i -E 's/minSdk(Version)?[ =]+flutter\.minSdkVersion/minSdk = 26/' "$f"
+          grep -n 'minSdk' "$f"
+
       - name: Localised app name (Sniper-Dz / القناص)
         run: |
           cp -r android_overrides/res/. android/app/src/main/res/
