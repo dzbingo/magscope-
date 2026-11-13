@@ -77,10 +77,10 @@ jobs:
           cp /tmp/merged.gradle "$f"
           head -12 "$f"
 
-      - name: Localised app name (Sniper-Dz / القناص)
+      - name: Localised app name (MagVision Pro / MagVision Pro)
         run: |
           cp -r android_overrides/res/. android/app/src/main/res/
-          sed -i 's/android:label="Sniper-Dz"/android:label="@string\/app_name"/' android/app/src/main/AndroidManifest.xml
+          sed -i 's/android:label="MagVision Pro"/android:label="@string\/app_name"/' android/app/src/main/AndroidManifest.xml
           grep -n 'android:label' android/app/src/main/AndroidManifest.xml
 
       - name: Dark launch screen
