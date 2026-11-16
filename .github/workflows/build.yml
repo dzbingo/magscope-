@@ -103,6 +103,23 @@ jobs:
       - name: Get packages
         run: flutter pub get
 
+      # Report only: errors found here are shown in the run summary but never
+      # stop the APK from being built.
+      - name: Analyze code and run unit tests (report only)
+        continue-on-error: true
+        run: |
+          rm -f test/widget_test.dart
+          {
+            echo '## flutter analyze (errors and warnings)'
+            echo '```'
+            flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | grep -E 'error|warning|issues found|No issues' | head -80
+            echo '```'
+            echo '## flutter test'
+            echo '```'
+            flutter test 2>&1 | tail -60
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY" || true
+
       # Gradle is normally downloaded from GitHub releases, which sometimes answers
       # 504. Download it ourselves with many retries (two mirrors) and point the
       # wrapper to the local file.
