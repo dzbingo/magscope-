@@ -94,9 +94,9 @@ jobs:
         continue-on-error: true
         run: |
           mkdir -p assets/fonts
-          for w in Regular Medium SemiBold Bold; do
-            curl -fsSL -o assets/fonts/IBMPlexSansArabic-$w.ttf \
-              https://github.com/google/fonts/raw/main/ofl/ibmplexsansarabic/IBMPlexSansArabic-$w.ttf || true
+          for w in Regular Medium Bold ExtraBold; do
+            curl -fsSL -o assets/fonts/Tajawal-$w.ttf \
+              https://github.com/google/fonts/raw/main/ofl/tajawal/Tajawal-$w.ttf || true
           done
           python3 tool/add_fonts.py
 
