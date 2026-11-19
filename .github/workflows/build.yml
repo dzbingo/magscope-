@@ -187,6 +187,21 @@ jobs:
           fi
           exit $code
 
+      # Diagnostic only: prints what the phone/tablet's installer reads from the APK.
+      - name: Inspect APK (report only)
+        continue-on-error: true
+        run: |
+          apk=build/app/outputs/flutter-apk/app-release.apk
+          bt=$(ls -d $ANDROID_HOME/build-tools/* 2>/dev/null | sort -V | tail -1)
+          {
+            echo '## APK info (copy this if installing fails)'
+            echo '```'
+            ls -l "$apk" | awk '{print "size bytes:", $5}'
+            "$bt/aapt2" dump badging "$apk" 2>&1 | grep -E "^package:|sdkVersion|targetSdkVersion|native-code|uses-implied" | head -20
+            "$bt/apksigner" verify --verbose --print-certs "$apk" 2>&1 | head -12
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - uses: actions/upload-artifact@v4
         with:
           name: magscope-apk
