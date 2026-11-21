@@ -43,12 +43,12 @@ jobs:
         run: cp android_overrides/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
 
       # Some plugins (camera, Bluetooth, location) need a newer minimum Android
-      # version than Flutter's default. Android 8.0+ covers nearly all phones.
-      - name: Raise minSdk to 26
+      # version than Flutter's default. Android 7.0 (API 24) is the target; if a plugin needs more, the build says which.
+      - name: Set minSdk 24 (Android 7.0+)
         run: |
           f=$(ls android/app/build.gradle.kts android/app/build.gradle 2>/dev/null | head -1)
           echo "Patching $f"
-          sed -i -E 's/minSdk(Version)?[ =]+flutter\.minSdkVersion/minSdk = 26/' "$f"
+          sed -i -E 's/minSdk(Version)?[ =]+flutter\.minSdkVersion/minSdk = 24/' "$f"
           grep -n 'minSdk' "$f"
 
       # Newer Flutter requires every plugin to compile against Android 36, but some
